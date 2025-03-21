@@ -3,9 +3,8 @@ from algosdk.v2client import algod
 
 from config.settings import settings
 
-algod_client = algod.AlgodClient(
-    algod_token='', 
-    algod_address=settings.algod_address)
+algod_client = algod.AlgodClient(algod_token="", algod_address=settings.algod_address)
+
 
 def generate_algorand_keypair() -> tuple[str, str]:
     """
@@ -16,13 +15,14 @@ def generate_algorand_keypair() -> tuple[str, str]:
 
 
 def create_asa(
-        private_key: str, 
-        creator_address: str, 
-        unit_name: str, 
-        asset_name: str, 
-        total: int, 
-        decimals: int, 
-        url: str) -> int:
+    private_key: str,
+    creator_address: str,
+    unit_name: str,
+    asset_name: str,
+    total: int,
+    decimals: int,
+    url: str,
+) -> int:
     """
     Create an Algorand Standard Asset (ASA).
     """
@@ -56,6 +56,7 @@ def create_asa(
     print(f"Asset ID created: {created_asset}")
     return created_asset
 
+
 def opt_in_to_asa(private_key: str, address: str, asset_id: int):
     """
     Opt-in to an Algorand Standard Asset (ASA).
@@ -70,11 +71,14 @@ def opt_in_to_asa(private_key: str, address: str, asset_id: int):
     results = transaction.wait_for_confirmation(algod_client, txid, 4)
     print(f"Result confirmed in round: {results['confirmed-round']}")
 
-def transfer_asa(private_key: str, 
-                 sender_address: str, 
-                 receiver_address: str, 
-                 asset_id: int, 
-                 amount: int):
+
+def transfer_asa(
+    private_key: str,
+    sender_address: str,
+    receiver_address: str,
+    asset_id: int,
+    amount: int,
+):
     """
     Transfer an Algorand Standard Asset (ASA).
     """
@@ -95,11 +99,13 @@ def transfer_asa(private_key: str,
     return txid
 
 
-def revoke_asa(private_key: str, 
-                clawback_address: str, 
-                holder_address: str, 
-                asset_id: int, 
-                amount: int):
+def revoke_asa(
+    private_key: str,
+    clawback_address: str,
+    holder_address: str,
+    asset_id: int,
+    amount: int,
+):
     """
     Revoke an Algorand Standard Asset (ASA) from a target account.
     """

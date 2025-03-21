@@ -16,9 +16,9 @@ recordsRouter = APIRouter(prefix="/records")
 # POST Create Land deed Records
 @recordsRouter.post("/create-record")
 async def create_record(
-    current_user: Annotated[User, Depends(get_current_active_user)], 
+    current_user: Annotated[User, Depends(get_current_active_user)],
     location: str,
-    file: UploadFile = File(...)
+    file: UploadFile = File(...),
 ):
     """
     Create Land record. This endpoint is supposed to create an unverified
@@ -58,7 +58,6 @@ async def create_record(
     return save_file
 
 
-
 # GET Fetch all unverified land deeds
 @recordsRouter.get("/fetch-unverified-records")
 async def fetch_all_unverified_records(
@@ -74,7 +73,7 @@ async def fetch_all_unverified_records(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="You are not authorised to access this resource.",
         )
-    
+
     records = await engine.find(Record, Record.verified == False)
     return records
 
@@ -94,7 +93,7 @@ async def fetch_all_records(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="You are not authorised to access this resource.",
         )
-    
+
     record = await engine.find(Record)
     return record
 
@@ -102,8 +101,7 @@ async def fetch_all_records(
 # POST Verify land record and create NFT on Algorand blockcahin
 @recordsRouter.post("/issue-record", status_code=status.HTTP_201_CREATED)
 async def issue_digital_land_record(
-    current_user: Annotated[User, Depends(get_current_active_user)],
-    land_holder_id: str
+    current_user: Annotated[User, Depends(get_current_active_user)], land_holder_id: str
 ):
     """
     Verify and Create tokenised version of land record.
@@ -117,55 +115,54 @@ async def issue_digital_land_record(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="You are not authorised to access this resource.",
         )
-    
+
     land_holder = await engine.find_one(User, User.id == land_holder_id)
     if not land_holder:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Land holder not found.",
         )
-    
+
     land_holder_record = await engine.find_one(Record, Record.user_id == land_holder_id)
     if not land_holder_record:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Land holder record not found.",
         )
-    
+
     # Create ASA
     asset_id = create_asa(
         private_key=decrypt_data(current_user.algorand_encrypted_private_key.encode()),
         creator_address=current_user.algorand_address,
         asset_name=f"{land_holder.first_name}_{land_holder.surname}_{land_holder_record.location}",
         unit_name=f"{land_holder.first_name}_{land_holder.surname}_{land_holder_record.location}",
-        total=1, #Algorand configiration for NFT
-        decimals=0, # Algorand configuration for NFT
-        url=land_holder_record.file_url)
-    
+        total=1,  # Algorand configiration for NFT
+        decimals=0,  # Algorand configuration for NFT
+        url=land_holder_record.file_url,
+    )
+
     # Land owner opts-in to ASA
     opt_in_to_asa(
         private_key=decrypt_data(land_holder.algorand_encrypted_private_key.encode()),
         address=land_holder.algorand_address,
-        asset_id=asset_id)
-    
+        asset_id=asset_id,
+    )
+
     # Transfer ASA to land holder
     transaction_id = transfer_asa(
         private_key=decrypt_data(current_user.algorand_encrypted_private_key.encode()),
         sender_address=current_user.algorand_address,
         receiver_address=land_holder.algorand_address,
         asset_id=asset_id,
-        amount=1)
-    
-    #save transaction id to Record document
+        amount=1,
+    )
+
+    # save transaction id to Record document
     land_holder_record.transaction_id = transaction_id
     land_holder_record.verified = True
     await engine.save(land_holder_record)
 
     return land_holder_record
-
-    
-    
-
 
 
 # POST Revoke Land record token
@@ -184,7 +181,7 @@ async def revoke_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="You are not authorised to access this resource.",
         )
-    
+
     land_holder = await engine.find_one(User, User.id == user_id)
 
     if not land_holder:
@@ -192,29 +189,26 @@ async def revoke_token(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Land holder not found.",
         )
-    
+
     land_holder_record = await engine.find_one(Record, Record.user_id == user_id)
     if not land_holder_record:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Land holder record not found.",
         )
-    
+
     # Revoke ASA
     revoke_txid = revoke_asa(
-                    private_key=decrypt_data(current_user.algorand_encrypted_private_key.encode()),
-                    clawback_address=current_user.algorand_address,
-                    asset_id=land_holder_record.asset_id,
-                    holder_address=land_holder.algorand_address,
-                    amount=1)
-    
-    #save revoke transaction id to Record document
+        private_key=decrypt_data(current_user.algorand_encrypted_private_key.encode()),
+        clawback_address=current_user.algorand_address,
+        asset_id=land_holder_record.asset_id,
+        holder_address=land_holder.algorand_address,
+        amount=1,
+    )
+
+    # save revoke transaction id to Record document
     land_holder_record.revoke_transaction_id = revoke_txid
     land_holder_record.is_land_revoked = True
-    await engine.save(land_holder_record)   
+    await engine.save(land_holder_record)
 
-    return {
-        "detail": "Asset Revoked",
-        "transaction_id": revoke_txid
-    } 
-    
+    return {"detail": "Asset Revoked", "transaction_id": revoke_txid}

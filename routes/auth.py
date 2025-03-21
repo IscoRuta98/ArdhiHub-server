@@ -6,9 +6,14 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from models.auth import CreateUser, Token, User
 from services.algorand import generate_algorand_keypair
-from services.auth import (ACCESS_TOKEN_EXPIRE_MINUTES, authenticate_user,
-                           create_access_token, engine,
-                           get_current_active_user, get_password_hash)
+from services.auth import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    authenticate_user,
+    create_access_token,
+    engine,
+    get_current_active_user,
+    get_password_hash,
+)
 from services.crypto import encrypt_data
 
 authRouter = APIRouter(prefix="/auth")
