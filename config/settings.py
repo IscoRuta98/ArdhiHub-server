@@ -12,7 +12,6 @@ class Settings(BaseSettings):
     encryption_key: str
     digital_ocean_access_key: str
     digital_ocean_secret_key: str
-    algod_api_key: str
     algod_address: str
 
     model_config = SettingsConfigDict(env_file=".env")
